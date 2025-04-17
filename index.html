@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWUZS LOG FINDER</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    background-image: url('background.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat; 
+    padding: 20px;
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+        .container {
+            width: 100%;
+            transform: scale(0.9);
+            transform-origin: center;
+        }
+        h1 {
+            text-align: center;
+            color: #fff; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 45px;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 60%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: rgba(255, 255, 255, 0.1); 
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: rgba(0, 123, 255, 0.7);
+        }
+        button:hover {
+            background-color: rgba(0, 86, 179, 0.8);
+        }
+        .results {
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            display: none; 
+        }
+        .result-item {
+            margin: 10px 0;
+            background-color: #f9f9f9;
+            padding: 8px;
+            border-radius: 5px;
+            text-shadow: 1px 1px 3px rgba(200, 200, 200, 0.1);
+        }
+        .result-item a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        #downloadButton {
+            background-color: #28a745;
+            display: none;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            resize: vertical;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #333;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); 
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>AWUZS LOG FINDER</h1>
+
+        <!-- Klasör seçme input -->
+        <input type="file" id="folderInput" accept=".txt" webkitdirectory directory onchange="loadFolder(event)">
+        <input type="text" id="searchQuery" placeholder="Site adı ile arama yapın...">
+        <button onclick="search()">Ara</button>
+
+        <textarea id="logTextArea" readonly></textarea>
+        <button id="downloadButton" onclick="downloadLogs()">Logları İndir</button>
+    </div>
+
+    <script>
+        let fileData = [];
+        let logResults = [];
+
+        function loadFolder(event) {
+            const files = event.target.files;
+            fileData = [];
+            logResults = []; 
+
+            if (files.length > 0) {
+
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].type === "text/plain") {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            fileData.push(e.target.result); 
+                        };
+                        reader.onerror = function() {
+                            alert('Dosya okuma hatası!');
+                        };
+                        reader.readAsText(files[i]);
+                    }
+                }
+            }
+        }
+
+        function search() {
+            let query = document.getElementById("searchQuery").value.toLowerCase();
+            let logTextArea = document.getElementById("logTextArea");
+
+            logTextArea.value = ''; 
+
+            if (query.trim() === '') {
+                logTextArea.value = 'Lütfen bir site adı girin.';
+                return;
+            }
+
+            if (fileData.length === 0) {
+                logTextArea.value = 'Lütfen önce bir klasör yükleyin.';
+                return;
+            }
+
+            let results = [];
+  
+            fileData.forEach(fileContent => {
+                const lines = fileContent.split("\n");
+
+                lines.forEach(line => {
+                    if (line.toLowerCase().includes(query)) {
+                        results.push(line);
+                    }
+                });
+            });
+
+            if (results.length > 0) {
+                logResults = results; 
+
+                logTextArea.value = logResults.join("\n");
+
+                if (logResults.length > 50) {
+                    document.getElementById("downloadButton").style.display = 'inline-block';
+                } else {
+                    document.getElementById("downloadButton").style.display = 'none';
+                }
+            } else {
+                logTextArea.value = 'Aradığınız site bulunamadı.';
+            }
+        }
+
+        function downloadLogs() {
+            const blob = new Blob([logResults.join("\n")], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'loglar.txt';
+            link.click();
+        }
+    </script>
+
+</body>
+</html>
